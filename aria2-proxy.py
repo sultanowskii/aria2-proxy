@@ -1,10 +1,11 @@
 from os import getenv
 from typing import Any
+
+from dotenv import load_dotenv
 from flask import Flask
 from flask_jsonrpc import JSONRPC
 from flask_jsonrpc.exceptions import InvalidRequestError, JSONRPCError
 from requests import Session as RequestsSession
-from dotenv import load_dotenv
 
 load_dotenv()
 
