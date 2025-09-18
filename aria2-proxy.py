@@ -14,8 +14,8 @@ jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 load_dotenv()
 TARGET_ADDR = getenv('TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
-SELF_HOST = getenv('HOST', '0.0.0.0')
-SELF_PORT = getenv('PORT', '6800')
+HOST = getenv('HOST', '0.0.0.0')
+PORT = getenv('PORT', '6800')
 METHODS_TO_PROXY = [
     'aria2.remove',
     'aria2.forceRemove',
@@ -136,7 +136,7 @@ def setup():
 
 def main():
     setup()
-    app.run('0.0.0.0', 6800, debug=False)
+    app.run(host=HOST, port=PORT, debug=False)
 
 
 if __name__ == '__main__':
