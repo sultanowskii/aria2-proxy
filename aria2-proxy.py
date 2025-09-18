@@ -7,15 +7,48 @@ from flask_jsonrpc import JSONRPC
 from flask_jsonrpc.exceptions import InvalidRequestError, JSONRPCError
 from requests import Session as RequestsSession
 
-load_dotenv()
-
-TARGET_ADDR = getenv('TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
-SELF_HOST = getenv('HOST', '0.0.0.0')
-SELF_PORT = getenv('PORT', '6800')
 
 client = RequestsSession()
 app = Flask("application")
 jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
+
+load_dotenv()
+TARGET_ADDR = getenv('TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
+SELF_HOST = getenv('HOST', '0.0.0.0')
+SELF_PORT = getenv('PORT', '6800')
+METHODS_TO_PROXY = [
+    'aria2.remove',
+    'aria2.forceRemove',
+    'aria2.pause',
+    'aria2.pauseAll',
+    'aria2.forcePause',
+    'aria2.forcePauseAll',
+    'aria2.unpause',
+    'aria2.unpauseAll',
+    'aria2.tellStatus',
+    'aria2.getUris',
+    'aria2.getFiles',
+    'aria2.getPeers',
+    'aria2.getServers',
+    'aria2.tellActive',
+    'aria2.tellWaiting',
+    'aria2.tellStopped',
+    'aria2.changePosition',
+    'aria2.changeUri',
+    'aria2.getOption',
+    'aria2.getGlobalOption',
+    'aria2.getGlobalStat',
+    'aria2.purgeDownloadResult',
+    'aria2.removeDownloadResult',
+    'aria2.getVersion',
+    'aria2.getSessionInfo',
+    'aria2.shutdown',
+    'aria2.forceShutdown',
+    'aria2.saveSession',
+    'system.multicall',
+    'system.listMethods',
+    'system.listNotifications',
+]
 
 
 class DirOptionFobridden(InvalidRequestError):
@@ -88,41 +121,6 @@ def add_torrent(gid: str, options: dict) -> str:
 def add_torrent(options: dict) -> str:
     validate_no_dir_option(options)
     return call('aria2.changeGlobalOption', [options])
-
-
-METHODS_TO_PROXY = [
-    'aria2.remove',
-    'aria2.forceRemove',
-    'aria2.pause',
-    'aria2.pauseAll',
-    'aria2.forcePause',
-    'aria2.forcePauseAll',
-    'aria2.unpause',
-    'aria2.unpauseAll',
-    'aria2.tellStatus',
-    'aria2.getUris',
-    'aria2.getFiles',
-    'aria2.getPeers',
-    'aria2.getServers',
-    'aria2.tellActive',
-    'aria2.tellWaiting',
-    'aria2.tellStopped',
-    'aria2.changePosition',
-    'aria2.changeUri',
-    'aria2.getOption',
-    'aria2.getGlobalOption',
-    'aria2.getGlobalStat',
-    'aria2.purgeDownloadResult',
-    'aria2.removeDownloadResult',
-    'aria2.getVersion',
-    'aria2.getSessionInfo',
-    'aria2.shutdown',
-    'aria2.forceShutdown',
-    'aria2.saveSession',
-    'system.multicall',
-    'system.listMethods',
-    'system.listNotifications',
-]
 
 
 def generate_proxy_of(method: str):
