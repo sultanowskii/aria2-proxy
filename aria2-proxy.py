@@ -2,7 +2,8 @@ from os import getenv
 from typing import Any
 
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request
+from flask_cors import CORS
 from flask_jsonrpc import JSONRPC
 from flask_jsonrpc.exceptions import InvalidRequestError, JSONRPCError
 from requests import Session as RequestsSession
@@ -10,6 +11,7 @@ from requests import Session as RequestsSession
 
 client = RequestsSession()
 app = Flask("application")
+CORS(app)
 jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 

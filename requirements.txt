@@ -1,3 +1,4 @@
 Flask-JSONRPC
 requests
 python-dotenv
+flask-cors
