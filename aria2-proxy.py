@@ -1,4 +1,5 @@
 from os import getenv
+from os.path import normpath
 from typing import Any
 
 from dotenv import load_dotenv
@@ -15,19 +16,20 @@ CORS(app)
 jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 
-# fix for some clients (https://binux.github.io/yaaw/demo)
-@app.before_request
-def middleware_fix_content_type():
-    content_type = request.headers.get('Content-Type', '')
-    if 'application/x-www-form-urlencoded' in content_type:
-        request.environ['CONTENT_TYPE'] = content_type.replace('application/x-www-form-urlencoded', 'application/json')
+def parse_dir_whitelist(raw: str) -> set[str]:
+    res = set()
+    raw_paths = raw.split(':')
+    for raw_path in raw_paths:
+        res.add(normpath(raw_path))
+    return res
 
 
 load_dotenv()
-TARGET_ADDR = getenv('TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
-HOST = getenv('HOST', '0.0.0.0')
-PORT = getenv('PORT', '6800')
-METHODS_TO_PROXY = [
+TARGET_ADDR = getenv('ARIA2_PROXY_TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
+HOST = getenv('ARIA2_PROXY_HOST', '0.0.0.0')
+PORT = getenv('ARIA2_PROXY_PORT', '6800')
+DIR_WHITELIST = parse_dir_whitelist(getenv('ARIA2_PROXY_DIR_WHITELIST', ''))
+TRANSPARENT_METHODS = [
     'aria2.remove',
     'aria2.forceRemove',
     'aria2.pause',
@@ -62,8 +64,16 @@ METHODS_TO_PROXY = [
 ]
 
 
-class DirOptionFobridden(InvalidRequestError):
-    message = "Option 'dir' is forbidden"
+# fix for some clients (https://binux.github.io/yaaw/demo)
+@app.before_request
+def middleware_fix_content_type():
+    content_type = request.headers.get('Content-Type', '')
+    if 'application/x-www-form-urlencoded' in content_type:
+        request.environ['CONTENT_TYPE'] = content_type.replace('application/x-www-form-urlencoded', 'application/json')
+
+
+class DirNotInWhitelistError(InvalidRequestError):
+    message = "Specified 'dir' is not in the whitelist"
 
 
 def raise_error(error_data: dict):
@@ -78,7 +88,6 @@ def raise_error(error_data: dict):
 
 
 def call(method: str, params: Any) -> Any:
-    print(params)
     response = client.post(
         TARGET_ADDR,
         json=dict(
@@ -89,60 +98,63 @@ def call(method: str, params: Any) -> Any:
         )
     )
     response_data = response.json()
-    print(response_data)
     result = response_data.get('result', None)
     if result is None:
         raise_error(response_data.get('error'))
     return result
 
 
-def validate_no_dir_option(options: dict):
-    if options.get('dir', '') != '':
-        raise DirOptionFobridden()
+def validate_dir(options: dict):
+    dir = options.get('dir', '')
+    if dir == '':
+        return
+
+    if normpath(dir) not in DIR_WHITELIST:
+        raise DirNotInWhitelistError()
 
 
 @jsonrpc.method('aria2.addUri')
 def add_uri(uris: list[str], *data: Any) -> str:
     if len(data) >= 1:
-        validate_no_dir_option(data[0])
+        validate_dir(data[0])
     return call('aria2.addUri', [uris, *data])
 
 
 @jsonrpc.method('aria2.addTorrent')
 def add_torrent(torrent: str, *data: Any) -> str:
     if len(data) >= 2:
-        validate_no_dir_option(data[1])
+        validate_dir(data[1])
     return call('aria2.addTorrent', [torrent, *data])
 
 
 @jsonrpc.method('aria2.addMetalink')
 def add_torrent(metalink: str, *data: Any) -> str:
     if len(data) >= 1:
-        validate_no_dir_option(data[0])
+        validate_dir(data[0])
     return call('aria2.addMetalink', [metalink, *data])
 
 
 @jsonrpc.method('aria2.changeOption')
 def add_torrent(gid: str, options: dict) -> str:
-    validate_no_dir_option(options)
+    validate_dir(options)
     return call('aria2.changeOption', [gid, options])
 
 
 @jsonrpc.method('aria2.changeGlobalOption')
 def add_torrent(options: dict) -> str:
-    validate_no_dir_option(options)
+    validate_dir(options)
     return call('aria2.changeGlobalOption', [options])
 
 
-def generate_proxy_of(method: str):
+def generate_transparent_proxy_of(method: str):
     def proxy(*data: Any) -> Any:
         return call(method, [*data])
     return proxy
 
 
 def setup():
-    for method in METHODS_TO_PROXY:
-        jsonrpc.register_view_function(generate_proxy_of(method), method)
+    for method in TRANSPARENT_METHODS:
+        jsonrpc.register_view_function(generate_transparent_proxy_of(method), method)
 
 
 def main():
