@@ -21,6 +21,7 @@ def middleware_fix_content_type():
     content_type = request.headers.get('Content-Type', '')
     if content_type == 'application/x-www-form-urlencoded':
         request.environ['CONTENT_TYPE'] = 'application/json'
+        request.headers['Content-Type'] = 'application/json'
 
 
 load_dotenv()
