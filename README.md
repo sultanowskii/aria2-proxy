@@ -2,7 +2,7 @@
 
 `aria2` JSON-RPC proxy
 
-THe current main goal is to address [this issue](https://paper.seebug.org/120/) by making `dir` option more formalized and restricted. With `aria2-proxy`, you can specify a target directory whitelist (using env variable `ARIA2_PROXY_DIR_WHITELIST`, see [.env.example](.env.example)) - so that files could only be downloaded to these directories.
+The current main goal is to address [this issue](https://paper.seebug.org/120/) by making `dir` option more formalized and restricted. With `aria2-proxy`, you can specify a target directory whitelist (using env variable `ARIA2_PROXY_DIR_WHITELIST`, see [.env.example](.env.example)) - so that files could only be downloaded to these directories.
 
 If proxy gets a RPC call containing `dir` option, it checks if specified `dir` is in the whitelist.
 
