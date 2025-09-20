@@ -19,9 +19,8 @@ jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 @app.before_request
 def middleware_fix_content_type():
     content_type = request.headers.get('Content-Type', '')
-    if content_type == 'application/x-www-form-urlencoded':
-        request.environ['CONTENT_TYPE'] = 'application/json'
-        request.headers['Content-Type'] = 'application/json'
+    if 'application/x-www-form-urlencoded' in content_type:
+        request.environ['CONTENT_TYPE'] = content_type.replace('application/x-www-form-urlencoded', 'application/json')
 
 
 load_dotenv()
