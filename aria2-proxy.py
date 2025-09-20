@@ -2,7 +2,7 @@ from os import getenv
 from typing import Any
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_jsonrpc import JSONRPC
 from flask_jsonrpc.exceptions import InvalidRequestError, JSONRPCError
 from requests import Session as RequestsSession
@@ -11,6 +11,15 @@ from requests import Session as RequestsSession
 client = RequestsSession()
 app = Flask("application")
 jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
+
+
+# fix for some clients (https://binux.github.io/yaaw/demo)
+@app.before_request
+def middleware_fix_content_type():
+    content_type = request.headers.get('Content-Type', '')
+    if content_type == 'application/x-www-form-urlencoded':
+        request.environ['CONTENT_TYPE'] = 'application/json'
+
 
 load_dotenv()
 TARGET_ADDR = getenv('TARGET_ADDR', '0.0.0.0:6801/jsonrpc')
